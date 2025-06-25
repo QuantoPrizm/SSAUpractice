@@ -17,6 +17,12 @@ public class BoardGameController {
         this.repository = repository;
     }
 
+    // Hello
+    @GetMapping("/hello")
+    public String hello() {
+        return "hello";
+    }
+
     // GET Все игры
     @GetMapping
     public ResponseEntity<List<BoardGame>> getAllGames() {
