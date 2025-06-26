@@ -1,76 +1,58 @@
 package ru.ssau.BoardGames.controllers;
 
-import ru.ssau.BoardGames.entity.BoardGame;
-import ru.ssau.BoardGames.repos.BoardGameRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.ssau.BoardGames.entity.BoardGame;
+import ru.ssau.BoardGames.repos.BoardGameRepository;
+
 import java.util.List;
+import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/games")
+@RequestMapping("/api/boardgames")
 public class BoardGameController {
 
-    private final BoardGameRepository repository;
+    private final BoardGameRepository boardGameRepository;
 
-    public BoardGameController(BoardGameRepository repository) {
-        this.repository = repository;
+    public BoardGameController(BoardGameRepository boardGameRepository) {
+        this.boardGameRepository = boardGameRepository;
     }
 
-    // Hello
-    @GetMapping("/hello")
-    public String hello() {
-        return "hello";
-    }
-
-    // GET Все игры
     @GetMapping
-    public ResponseEntity<List<BoardGame>> getAllGames() {
-        List<BoardGame> games = repository.findAll();
-        return new ResponseEntity<>(games, HttpStatus.OK);
+    public List<BoardGame> getAllBoardGames() {
+        return boardGameRepository.findAll();
     }
 
-    // GET Игра по ID
     @GetMapping("/{id}")
-    public ResponseEntity<BoardGame> getGameById(@PathVariable Long id) {
-        BoardGame game = repository.findById(id).orElse(null);
-        if (game != null) {
-            return new ResponseEntity<>(game, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+    public ResponseEntity<BoardGame> getBoardGameById(@PathVariable Long id) {
+        Optional<BoardGame> game = boardGameRepository.findById(id);
+        return game.map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    // POST Создание новой игры
     @PostMapping
-    public ResponseEntity<BoardGame> createGame(@RequestBody BoardGame game) {
-        BoardGame savedGame = repository.save(game);
-        return new ResponseEntity<>(savedGame, HttpStatus.CREATED);
+    public BoardGame createBoardGame(@RequestBody BoardGame boardGame) {
+        return boardGameRepository.save(boardGame);
     }
 
-    // PUT Обновление игры
     @PutMapping("/{id}")
-    public ResponseEntity<BoardGame> updateGame(
-            @PathVariable Long id,
-            @RequestBody BoardGame updatedGame) {
-
-        if (repository.existsById(id)) {
-            updatedGame.setId(id); // Убедимся, что ID сохраняется
-            BoardGame savedGame = repository.save(updatedGame);
-            return new ResponseEntity<>(savedGame, HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
+    public ResponseEntity<BoardGame> updateBoardGame(@PathVariable Long id, @RequestBody BoardGame gameDetails) {
+        return boardGameRepository.findById(id)
+                .map(game -> {
+                    game.setTitle(gameDetails.getTitle());
+                    game.setPublisher(gameDetails.getPublisher());
+                    game.setReleaseDate(gameDetails.getReleaseDate());
+                    return ResponseEntity.ok(boardGameRepository.save(game));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
-    // DELETE Удаление игры
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteGame(@PathVariable Long id) {
-        if (repository.existsById(id)) {
-            repository.deleteById(id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    public ResponseEntity<Void> deleteBoardGame(@PathVariable Long id) {
+        if (boardGameRepository.existsById(id)) {
+            boardGameRepository.deleteById(id);
+            return ResponseEntity.noContent().build();
         }
+        return ResponseEntity.notFound().build();
     }
 }
