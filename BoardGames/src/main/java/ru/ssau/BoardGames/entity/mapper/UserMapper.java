@@ -22,8 +22,8 @@ public class UserMapper {
         UserDto dto = new UserDto();
         dto.setUserId(user.getUserId());
         dto.setEmail(user.getEmail());
-        dto.setPassword(user.getPasswordHash());
-        // Намеренно не включаем пароль в DTO
+        // Никогда не включаем хеш пароля в DTO!
+        dto.setPassword(null); // Явное обнуление
         dto.setCreatedAt(user.getCreatedAt());
         dto.setLastLogin(user.getLastLogin());
         return dto;
@@ -37,10 +37,12 @@ public class UserMapper {
         User user = new User();
         user.setUserId(dto.getUserId());
         user.setEmail(dto.getEmail());
-        user.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
-        // Пароль обрабатывается отдельно в контроллере
-        // createdAt устанавливается автоматически
-        // lastLogin устанавливается при логине
+
+        // Хешируем пароль только если он предоставлен
+        if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
+            user.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
+        }
+
         return user;
     }
 
@@ -49,11 +51,13 @@ public class UserMapper {
             return;
         }
 
-        if (dto.getEmail() != null) {
+        if (dto.getEmail() != null && !dto.getEmail().equals(entity.getEmail())) {
             entity.setEmail(dto.getEmail());
         }
-        // Пароль обновляется отдельно через контроллер
-        // Не обновляем createdAt - это неизменяемое поле
-        // lastLogin обновляется отдельно при логине
+
+        // Пароль обновляется только если предоставлен новый
+        if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
+            entity.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
+        }
     }
 }

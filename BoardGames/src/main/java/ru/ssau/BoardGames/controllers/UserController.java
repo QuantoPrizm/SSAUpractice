@@ -1,5 +1,6 @@
 package ru.ssau.BoardGames.controllers;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -42,26 +43,28 @@ public class UserController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping
-    public UserDto createUser(@RequestBody UserDto userDto) {
-        User user = userMapper.toEntity(userDto);
-        User savedUser = userRepository.save(user);
-        return userMapper.toDto(savedUser);
-    }
+@PostMapping
+public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserDto userDto) {
+    // Валидация уже выполнена через @Valid
+    User user = userMapper.toEntity(userDto);
+    User savedUser = userRepository.save(user);
+    return ResponseEntity.ok(userMapper.toDto(savedUser));
+}
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @RequestBody UserDto userDto) {
+    public ResponseEntity<UserDto> updateUser(
+            @PathVariable Long id,
+            @Valid @RequestBody UserDto userDto) {
+
         return userRepository.findById(id)
-                .map(user -> {
-                    user.setEmail(userDto.getEmail());
-                    if (userDto.getPassword() != null && !userDto.getPassword().isEmpty()) {
-                        user.setPasswordHash(passwordEncoder.encode(userDto.getPassword()));
-                    }
-                    User updatedUser = userRepository.save(user);
+                .map(existingUser -> {
+                    userMapper.updateUserFromDto(userDto, existingUser);
+                    User updatedUser = userRepository.save(existingUser);
                     return ResponseEntity.ok(userMapper.toDto(updatedUser));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {

@@ -1,0 +1,24 @@
+<div class="user-list-container">
+  <h2>User Management</h2>
+
+  @if (isLoading) {
+    <div class="loading">Loading users...</div>
+  }
+  @else if (error) {
+    <div class="error">{{ error }}</div>
+  }
+  @else {
+    <div class="user-cards">
+      @for (user of users; track user.userId) {
+        <div class="user-card">
+          <div class="user-info">
+            <div class="user-email">{{ user.email }}</div>
+            <div class="user-meta">
+              <span>ID: {{ user.userId }}</span>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

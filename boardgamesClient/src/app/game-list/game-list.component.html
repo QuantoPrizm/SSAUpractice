@@ -1,0 +1,47 @@
+<div class="games-container">
+  <div class="games-header">
+    <h2 class="section-title">Board Games Collection</h2>
+    <div class="sort-controls">
+      <button (click)="sortGames('rating-desc')" [class.active]="currentSort === 'rating-desc'">
+        <i class="fas fa-star"></i> Top Rated
+      </button>
+      <button (click)="sortGames('rating-asc')" [class.active]="currentSort === 'rating-asc'">
+        <i class="fas fa-star-half-alt"></i> Lowest Rated
+      </button>
+      <button (click)="sortGames('default')" [class.active]="currentSort === 'default'">
+        <i class="fas fa-sort"></i> Default
+      </button>
+    </div>
+  </div>
+  
+  <div class="games-grid">
+    @for (game of games; track game.gameId || game.title) {
+      <div class="game-card" [routerLink]="['/games', game.gameId]">
+        <div class="game-image-placeholder">
+          <i class="fas fa-dice"></i>
+        </div>
+        <div class="game-content">
+          <h3 class="game-title">{{ game.title }}</h3>
+          <div class="game-meta">
+            <span class="publisher">
+              <i class="fas fa-building"></i> {{ game.publisher }}
+            </span>
+            <span class="year">
+              <i class="fas fa-calendar-alt"></i> {{ game.releaseDate | date:'yyyy' }}
+            </span>
+          </div>
+          @if (game.averageRating) {
+            <div class="game-rating">
+              <div class="stars">
+                @for (i of [1,2,3,4,5]; track i) {
+                  <i class="fas fa-star{{ i > game.averageRating! ? '-half-alt' : '' }}"></i>
+                }
+              </div>
+              <span class="rating-value">{{ game.averageRating | number:'1.1-1' }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>

@@ -1,12 +1,19 @@
 package ru.ssau.BoardGames.controllers;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import ru.ssau.BoardGames.entity.BoardGame;
 import ru.ssau.BoardGames.entity.Feedback;
+import ru.ssau.BoardGames.entity.User;
+import ru.ssau.BoardGames.entity.dto.FeedbackDto;
+import ru.ssau.BoardGames.entity.mapper.FeedBackMapper;
 import ru.ssau.BoardGames.repos.FeedbackRepository;
 import ru.ssau.BoardGames.repos.BoardGameRepository;
 import ru.ssau.BoardGames.repos.UserRepository;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,13 +24,16 @@ public class FeedbackController {
     private final FeedbackRepository feedbackRepository;
     private final UserRepository userRepository;
     private final BoardGameRepository boardGameRepository;
+    private final FeedBackMapper feedbackMapper;
 
     public FeedbackController(FeedbackRepository feedbackRepository,
                               UserRepository userRepository,
-                              BoardGameRepository boardGameRepository) {
+                              BoardGameRepository boardGameRepository,
+                              FeedBackMapper feedbackMapper) {
         this.feedbackRepository = feedbackRepository;
         this.userRepository = userRepository;
         this.boardGameRepository = boardGameRepository;
+        this.feedbackMapper = feedbackMapper;
     }
 
     @GetMapping
@@ -39,12 +49,36 @@ public class FeedbackController {
     }
 
     @PostMapping
-    public ResponseEntity<Feedback> createFeedback(@RequestBody Feedback feedback) {
-        if (!userRepository.existsById(feedback.getUser().getUserId()) ||
-                !boardGameRepository.existsById(feedback.getGame().getGameId())) {
+    public ResponseEntity<FeedbackDto> createFeedback(Principal principal,
+                                                      @Valid @RequestBody FeedbackDto feedbackDto,
+                                                      BindingResult result) {
+
+        if (result.hasErrors()) {
             return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.ok(feedbackRepository.save(feedback));
+
+        // Получаем пользователя и игру из БД
+        User user = userRepository.findById(feedbackDto.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        BoardGame game = boardGameRepository.findById(feedbackDto.getGameId())
+                .orElseThrow(() -> new RuntimeException("Game not found"));
+
+        // Преобразование DTO в сущность и сохранение
+        Feedback feedback = feedbackMapper.toEntity(feedbackDto, user, game);
+        Feedback savedFeedback = feedbackRepository.save(feedback);
+
+        // Обновление среднего рейтинга игры
+        updateGameRating(game.getGameId());
+
+        return ResponseEntity.ok(feedbackMapper.toDto(savedFeedback));
+    }
+
+    private void updateGameRating(Long gameId) {
+        Double avgRating = feedbackRepository.calculateAverageRatingByGameId(gameId);
+        boardGameRepository.findById(gameId).ifPresent(game -> {
+            game.setAverageRating(avgRating != null ? avgRating : 0.0);
+            boardGameRepository.save(game);
+        });
     }
 
     @PutMapping("/{id}")

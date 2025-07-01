@@ -1,0 +1,59 @@
+@if (game) {
+  <div class="game-details">
+    <button class="back-button" (click)="goBack()">
+      <i class="fas fa-arrow-left"></i> Back to Games
+    </button>
+    <div class="game-header">
+      <h2>{{ game.title }}</h2>
+      <div class="game-meta">
+        <span><i class="fas fa-building"></i> {{ game.publisher }}</span>
+        <span><i class="fas fa-calendar"></i> {{ game.releaseDate | date:'longDate' }}</span>
+      </div>
+      
+      @if (game.averageRating) {
+        <div class="rating">
+          <div class="stars">
+            @for (i of [1,2,3,4,5]; track i) {
+              <i class="fas fa-star{{ i > game.averageRating! ? '-half-alt' : '' }}"></i>
+            }
+          </div>
+          <span>{{ game.averageRating | number:'1.1-1' }}/5</span>
+        </div>
+      }
+    </div>
+
+    <div class="feedback-section">
+      <h3>Leave Feedback</h3>
+      <div class="feedback-form">
+        <div class="rating-select">
+          <label>Rating:</label>
+          <select [(ngModel)]="newFeedback.rating">
+            @for (i of [1,2,3,4,5]; track i) {
+              <option [value]="i">{{i}} ★</option>
+            }
+          </select>
+        </div>
+        <textarea [(ngModel)]="newFeedback.comment" placeholder="Your review..."></textarea>
+        <button (click)="submitFeedback()">Submit Review</button>
+      </div>
+
+      <div class="feedback-list">
+        <h4>User Reviews</h4>
+        @for (feedback of feedbacks; track feedback.feedbackId) {
+          <div class="feedback-item">
+            <div class="feedback-header">
+              <span class="user">{{ feedback.userName || 'Anonymous' }}</span>
+              <span class="rating">
+                @for (i of [1,2,3,4,5]; track i) {
+                  <i class="fas fa-star{{ i > feedback.rating ? '-half-alt' : '' }}"></i>
+                }
+              </span>
+            </div>
+            <p class="comment">{{ feedback.comment }}</p>
+            <div class="date">{{ feedback.createdAt | date:'medium' }}</div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}
